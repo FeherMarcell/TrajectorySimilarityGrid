@@ -11,36 +11,44 @@ let gridsize = 50;
 let pointRadius = 5;
 let lineWidth = 2;
 
-let prevPoint = null;
-let colors = [ "rgb(187, 143, 206)" ];
-let grid_colors = [ "rgba(187, 143, 206, .3)" ]
+let colors_rgb = [ [187, 143, 206], [125, 206, 160], [248, 196, 113], [215, 219, 221], [133, 146, 158] ];
+let grid_color_alpha = 0.3;
 
-
-// Draw primary grid
-drawGrid(gridsize, GRID_PRIMARY);
-
-let trajectory = [];
+let currentTrajectoryIdx = 0;
+let trajectories = [ [] ];
 let markedCells = [];
 
+// Draw primary grid
+drawGrid(gridsize, "#ddd", GRID_PRIMARY);
+
+
 canvas.onclick = function(evt, target){
+
+    let trajectory = trajectories[currentTrajectoryIdx];
+    let colorIdx = currentTrajectoryIdx % colors_rgb.length;
+    let color = "rgb("+colors_rgb[colorIdx][0]+","+colors_rgb[colorIdx][1]+","+colors_rgb[colorIdx][2]+")";
+    let grid_fill_color = "rgba("+colors_rgb[colorIdx][0]+","+colors_rgb[colorIdx][1]+","+colors_rgb[colorIdx][2]+","+grid_color_alpha+")";
+
     let point = { 
         x: evt.offsetX, 
         y: evt.offsetY,
         cellX: Math.floor(evt.offsetX / gridsize),
         cellY: Math.floor(evt.offsetY / gridsize)
     };
+    
+
+
     trajectory.push(point);
 
     // Draw a point
-    drawPoint(point, colors[0]);
+    drawPoint(point, color);
     
     // If it's not the first point, draw a line from the previous one and fill the cells under it
     if(trajectory.length > 1){
-        drawLine(trajectory[trajectory.length-2], trajectory[trajectory.length-1], colors[0]);
+        drawLine(trajectory[trajectory.length-2], trajectory[trajectory.length-1], color);
         
         // Get all grid cells that are crossed by the line 
         let gridCells = markPoints(gridsize, trajectory[trajectory.length-2], trajectory[trajectory.length-1]);
-        //console.log("Marked cells: ", gridCells);
 
         // Mark the new cells (not crossed by previous lines)
         for(var idx in gridCells){
@@ -52,10 +60,17 @@ canvas.onclick = function(evt, target){
                     x: gridCells[idx].cellX * (gridsize),
                     y: gridCells[idx].cellY * (gridsize)
                 }
-                drawRect(gridCoords, gridsize, grid_colors[0]);
+                drawRect(gridCoords, gridsize, grid_fill_color);
             }
         }
     }
+}
+
+
+function startNewTrajectory(){
+    ++currentTrajectoryIdx;
+    trajectories.push([]);
+    markedCells = [];
 }
 
 // Checks if a cell is already marked
@@ -92,13 +107,13 @@ function drawPoint(pointCoords, color){
     ctx.fill();
 }
 
-function drawGrid(gridsize, which){
+function drawGrid(gridsize, color, which){
 
     if(which == undefined){ which = GRID_PRIMARY; }
 
     let gridOffset = (which == 1) ? 0 : gridsize/2;
 
-    ctx.strokeStyle = "#ddd";
+    ctx.strokeStyle = color;
 
     if(which == GRID_SECONDARY){
         ctx.setLineDash([10, 10]);
